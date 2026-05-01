@@ -662,34 +662,93 @@ const GLOSSARY = [
 ];
 
 const MERMAID_SOURCE = `flowchart LR
-  A[1. Intake] --> B[2. Investigation]
-  B --> C[3. Treatment]
-  C --> D[4. Demand]
-  D -->|Accepted| H[8. Resolution]
-  D -->|Rejected| E[5. Litigation Filed]
-  E --> F[6. Discovery]
-  F --> G[7. Mediation]
-  G -->|Settled| H
-  G -->|Trial Verdict| H
-  C -.->|Case Dropped| H
 
-classDef intake fill:#E8F0FE,stroke:#0057B8,stroke-width:2px,color:#1A1A1A
-classDef invest fill:#E8F0FE,stroke:#003D80,stroke-width:2px,color:#1A1A1A
-classDef treat fill:#FFF8E1,stroke:#FFD700,stroke-width:2px,color:#1A1A1A
-classDef demand fill:#FFF4D1,stroke:#FFD700,stroke-width:2px,color:#1A1A1A
-classDef lit fill:#E8F0FE,stroke:#003D80,stroke-width:2px,color:#1A1A1A
-classDef disc fill:#FFF8E1,stroke:#0057B8,stroke-width:2px,color:#1A1A1A
-classDef med fill:#FFF4D1,stroke:#FFD700,stroke-width:3px,color:#1A1A1A
-classDef close fill:#D4EDDA,stroke:#28A745,stroke-width:2px,color:#1A1A1A
+  subgraph INTAKE [1. Intake]
+    direction TB
+    a1[Lead capture] --> a2[Initial consult]
+    a2 --> a3[Fee discussion]
+  end
 
-class A intake
-class B invest
-class C treat
-class D demand
-class E lit
-class F disc
-class G med
-class H close`;
+  subgraph ONBOARD [2. Onboarding]
+    direction TB
+    b1[Retainer signed] --> b2[Conflict check]
+    b2 --> b3[HIPAA + wage auth]
+    b3 --> b4[Matter opened in CC]
+    b4 --> b5[SOL calendared]
+  end
+
+  subgraph INVEST [3. Investigation]
+    direction TB
+    c1[Police report] --> c2[Scene photos]
+    c2 --> c3[Witness IDs]
+    c3 --> c4[GL carrier ID]
+  end
+
+  subgraph TREAT [4. Treatment]
+    direction TB
+    d1[Provider list] --> d2[Records and bills]
+    d2 --> d3[MMI watch]
+    d3 --> d4[Lien IDs]
+  end
+
+  subgraph DEMAND [5. Demand]
+    direction TB
+    e1[Compile exhibits] --> e2[Draft letter]
+    e2 --> e3[Send to carrier]
+    e3 --> e4{Accepted?}
+  end
+
+  subgraph LIT [6. Litigation Filed]
+    direction TB
+    f1[File complaint] --> f2[Serve defendants]
+    f2 --> f3[Track answers]
+    f3 --> f4[Scheduling order]
+  end
+
+  subgraph DISC [7. Discovery]
+    direction TB
+    g1[Initial disclosures] --> g2[Written discovery]
+    g2 --> g3[Depositions]
+    g3 --> g4[Expert disclosures]
+  end
+
+  subgraph MED [8. Mediation]
+    direction TB
+    h1[Confirm mediator] --> h2[Mediation brief]
+    h2 --> h3[Authority confirmed]
+    h3 --> h4{Settled?}
+  end
+
+  subgraph RES [9. Resolution]
+    direction TB
+    i1[Settlement docs] --> i2[Funds in trust]
+    i2 --> i3[Lien negotiations]
+    i3 --> i4[Disburse and close]
+  end
+
+  INTAKE --> ONBOARD
+  ONBOARD --> INVEST
+  INVEST --> TREAT
+  TREAT --> DEMAND
+  DEMAND -->|Accepted| RES
+  DEMAND -->|Rejected| LIT
+  LIT --> DISC
+  DISC --> MED
+  MED -->|Settled| RES
+  MED -->|Trial verdict| RES
+  TREAT -.->|Case dropped| RES
+
+  classDef stage fill:#E8F0FE,stroke:#0057B8,stroke-width:2px,color:#1A1A1A
+  classDef demand fill:#FFF4D1,stroke:#FFD700,stroke-width:2px,color:#1A1A1A
+  classDef med fill:#FFF4D1,stroke:#FFD700,stroke-width:3px,color:#1A1A1A
+  classDef close fill:#D4EDDA,stroke:#28A745,stroke-width:2px,color:#1A1A1A
+  classDef decision fill:#FFD700,stroke:#003D80,stroke-width:2.5px,color:#1A1A1A
+
+  class a1,a2,a3,b1,b2,b3,b4,b5,c1,c2,c3,c4,d1,d2,d3,d4,f1,f2,f3,f4,g1,g2,g3,g4 stage
+  class e1,e2,e3 demand
+  class h1,h2,h3 med
+  class i1,i2,i3,i4 close
+  class e4,h4 decision`;
 
 const MATTER = {
   caption: 'Hernandez v. Westgate Markets, Inc. et al.',
@@ -1595,13 +1654,13 @@ function WorkflowTab() {
     setActiveFocus(subgraphId);
   };
 
-  const FocusButton = ({ id, label, PI }) => (
+  const FocusButton = ({ id, label, current }) => (
     <button
       onClick={() => focusOn(id)}
       className={`px-3 py-1 rounded-full font-mont font-semibold text-[11.5px] border transition-all ${
         activeFocus === id
           ? 'bg-acs-gold border-acs-charcoal text-acs-charcoal'
-          : PI
+          : current
             ? 'bg-yellow-50 border-acs-gold text-acs-charcoal border-dashed hover:bg-acs-gold'
             : 'bg-acs-light-blue border-acs-blue text-acs-blue hover:bg-acs-blue hover:text-white'
       }`}
@@ -1624,16 +1683,14 @@ function WorkflowTab() {
         <div className="flex gap-1.5 items-center flex-wrap">
           <span className="font-mont text-[11px] font-bold text-gray-500 tracking-wider mr-1">FOCUS</span>
           <FocusButton id="INTAKE" label="1. Intake" />
-          <FocusButton id="CONSULT" label="2. Consult" />
-          <FocusButton id="PRELIT" label="3. Pre-Lit" />
-          <FocusButton id="PLEAD" label="4. Pleadings" />
-          <FocusButton id="DISC" label="5. Discovery" />
-          <FocusButton id="PI_BRANCH" label="6. PI" PI />
-          <FocusButton id="IJ" label="7. Interlocutory" />
-          <FocusButton id="SALE" label="8. Sale" />
-          <FocusButton id="ACCT" label="9. Accounting" />
-          <FocusButton id="FEES" label="10. Fees" />
-          <FocusButton id="CLOSE" label="11. Closeout" />
+          <FocusButton id="ONBOARD" label="2. Onboarding" />
+          <FocusButton id="INVEST" label="3. Investigation" />
+          <FocusButton id="TREAT" label="4. Treatment" />
+          <FocusButton id="DEMAND" label="5. Demand" />
+          <FocusButton id="LIT" label="6. Litigation" />
+          <FocusButton id="DISC" label="7. Discovery" />
+          <FocusButton id="MED" label="8. Mediation" current />
+          <FocusButton id="RES" label="9. Resolution" />
         </div>
       </div>
 
@@ -1653,16 +1710,15 @@ function WorkflowTab() {
       </div>
 
       <div className="bg-white p-3.5 rounded-md text-[12.5px] border-l-[3px] border-acs-gold shadow-sm">
-        <strong className="font-mont text-acs-blue">How to use:</strong> drag to pan · scroll-wheel or +/− to zoom · click any phase chip above to fly to that swim-lane · ⤢ Full goes fullscreen. Decision diamonds are gold; PI swim-lane is dashed (conditional). The Matter Status subgraph (bottom) shows the orthogonal closure axis — matters can close from any phase via Status change (Settled / Withdrawn / Stipulated / Completed); dashed edges show the most common closure paths. For task-level breakdown of any phase, jump to <em>Personal Injury Lifecycle</em> and expand the phase card.
+        <strong className="font-mont text-acs-blue">How to use:</strong> drag to pan · scroll-wheel or +/− to zoom · click any phase chip above to fly to that swim-lane · ⤢ Full goes fullscreen. Decision diamonds (gold) mark settlement-or-litigate forks at Demand and Mediation. Dashed edges show alternate closure paths — e.g., a case dropped at Treatment, or a trial verdict from Mediation. For task-level breakdown of any phase, jump to <em>Personal Injury Lifecycle</em> and expand the phase card.
       </div>
 
       <div className="bg-white p-3 px-4 rounded shadow-sm flex flex-wrap gap-3.5 text-[12px]">
         {[
-          ['#E8F0FE','#0057B8','Standard phase'],
-          ['#FFF8E1','#FFD700','PI conditional'],
-          ['#D4EDDA','#28A745','Sale execution'],
+          ['#E8F0FE','#0057B8','Standard stage'],
+          ['#FFF4D1','#FFD700','Mediation (current)'],
+          ['#D4EDDA','#28A745','Resolution'],
           ['#FFD700','#003D80','Decision point'],
-          ['#F5F5F5','#ADADAD','Closeout'],
         ].map(([bg,bd,label]) => (
           <span key={label} className="flex items-center gap-1.5">
             <span className="inline-block w-3.5 h-3.5 rounded-sm border" style={{ background: bg, borderColor: bd }}></span>
