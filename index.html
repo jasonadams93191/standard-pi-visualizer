@@ -665,19 +665,13 @@ const MERMAID_SOURCE = `flowchart LR
   A[1. Intake] --> B[2. Investigation]
   B --> C[3. Treatment]
   C --> D[4. Demand]
-  D -->|Accepted| Z[8. Resolution]
+  D -->|Accepted| H[8. Resolution]
   D -->|Rejected| E[5. Litigation Filed]
   E --> F[6. Discovery]
-  F -->|Dispositive Motion| G{MSJ Granted?}
-  G -->|Yes| Z
-  G -->|No| H[7. Mediation]
-  F --> H
-  H -->|Settlement| Z
-  H -->|Impasse| I[Trial Prep]
-  I --> J[Trial]
-  J --> Z
-  D -.->|Voluntary Dismissal| ZW[Closed: Withdrawn]
-  C -.->|Lack of Liability / Damages| ZW
+  F --> G[7. Mediation]
+  G -->|Settled| H
+  G -->|Trial Verdict| H
+  C -.->|Case Dropped| H
 
 classDef intake fill:#E8F0FE,stroke:#0057B8,stroke-width:2px,color:#1A1A1A
 classDef invest fill:#E8F0FE,stroke:#003D80,stroke-width:2px,color:#1A1A1A
@@ -686,10 +680,7 @@ classDef demand fill:#FFF4D1,stroke:#FFD700,stroke-width:2px,color:#1A1A1A
 classDef lit fill:#E8F0FE,stroke:#003D80,stroke-width:2px,color:#1A1A1A
 classDef disc fill:#FFF8E1,stroke:#0057B8,stroke-width:2px,color:#1A1A1A
 classDef med fill:#FFF4D1,stroke:#FFD700,stroke-width:3px,color:#1A1A1A
-classDef trial fill:#FFE5E5,stroke:#C53030,stroke-width:2px,color:#1A1A1A
 classDef close fill:#D4EDDA,stroke:#28A745,stroke-width:2px,color:#1A1A1A
-classDef wd fill:#E8E8E8,stroke:#616161,stroke-width:2px,color:#1A1A1A,stroke-dasharray: 5 3
-classDef decision fill:#FFD700,stroke:#003D80,stroke-width:2.5px,color:#1A1A1A
 
 class A intake
 class B invest
@@ -697,11 +688,8 @@ class C treat
 class D demand
 class E lit
 class F disc
-class H med
-class I,J trial
-class Z close
-class ZW wd
-class G decision`;
+class G med
+class H close`;
 
 const MATTER = {
   caption: 'Hernandez v. Westgate Markets, Inc. et al.',
@@ -1198,7 +1186,7 @@ function Header() {
 }
 
 function TabNav({ tab, setTab }) {
-  const tabs = ['Lifecycle', 'Workflow', 'Matter', 'Pipeline Dashboard', 'Build Plan'];
+  const tabs = ['Lifecycle', 'Workflow', 'Matter', 'Pipeline Dashboard', 'Analytics', 'Build Plan'];
   return (
     <div className="bg-white rounded-t-lg shadow-sm border-b-2 border-gray-200 flex overflow-x-auto">
       {tabs.map((label, i) => (
@@ -1414,7 +1402,7 @@ function WorkflowTab() {
       // 3. Render the flowchart
       let svg;
       try {
-        const id = 'personal injury-mermaid-' + Math.floor(Math.random() * 1e9);
+        const id = 'pi-mermaid-' + Math.floor(Math.random() * 1e9);
         const result = await window.mermaid.render(id, MERMAID_SOURCE);
         svg = result.svg;
       } catch (e) {
